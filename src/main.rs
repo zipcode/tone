@@ -9,11 +9,12 @@ fn main() {
     let tone: f64 = 1004.0;
     let hz: i32 = 44100;
     let duration = 2;
+    let amplitude = 0.8;
     let samples = hz*duration;
     let output = (0..samples).map(|sample| {
         let position_in_seconds = (sample as f64)/(hz as f64);
         let position_in_tone = (2.0*PI*position_in_seconds*tone).sin();
-        (position_in_tone * (std::i16::MAX as f64)).floor() as i16
+        (position_in_tone * amplitude * (std::i16::MAX as f64)).floor() as i16
     });
 
     let f = match File::create("tone.pcm") {
