@@ -1,32 +1,24 @@
-use std::f64;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufWriter;
+use std::f32::consts::PI;
+use std::i16;
+extern crate hound;
 
-const PI:f64 = f64::consts::PI;
+const TONE: f32 = 1000.0;
+const SAMPLE_RATE: u32 = 44100;
 
 fn main() {
-    let tone: f64 = 1004.0;
-    let hz: i32 = 44100;
-    let duration = 2;
-    let amplitude = 0.8;
-    let samples = hz*duration;
-    let output = (0..samples).map(|sample| {
-        let position_in_seconds = (sample as f64)/(hz as f64);
-        let position_in_tone = (2.0*PI*position_in_seconds*tone).sin();
-        (position_in_tone * amplitude * (std::i16::MAX as f64)).floor() as i16
-    });
-
-    let f = match File::create("tone.pcm") {
-        Ok(f) => f,
-        Err(e) => {
-            print!("error: {}", e);
-            std::process::exit(1);
-        }
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate: SAMPLE_RATE,
+        bits_per_sample: 16,
     };
-    let mut stream = BufWriter::new(f);
-    for x in output {
-        let buf: [u8; 2] = [(x >> 8) as u8, (x & 0xff) as u8];
-        stream.write_all(&buf);
+    let mut writer = hound::WavWriter::create("tone.wav", spec).unwrap();
+    let tone = (0..SAMPLE_RATE).map(|x| (x as f32)/(SAMPLE_RATE as f32)).map(|t| {
+        let sample = (2.0 * PI * TONE * t).sin();
+        let amplitude = i16::MAX as f32;
+        (sample * amplitude)
+    });
+    for sample in tone {
+        writer.write_sample(sample as i16).unwrap();
     }
+    writer.finalize();
 }
