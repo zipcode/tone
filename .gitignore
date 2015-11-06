@@ -1,3 +1,4 @@
 Cargo.lock
 target/*
 tone.pcm
+tone.wav
