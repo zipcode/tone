@@ -16,6 +16,10 @@ fn cycle(freq: f32) -> Vec<f32> {
     }).collect()
 }
 
+fn zip(f1: f32, f2: f32, samples: usize) -> Vec<f32> {
+    cycle(f1).iter().cycle().zip(cycle(f2).iter().cycle()).map(|(s1, s2)| (s1+s2)/2.0).take(samples).collect()
+}
+
 fn main() {
     let spec = hound::WavSpec {
         channels: 1,
@@ -23,7 +27,7 @@ fn main() {
         bits_per_sample: 16,
     };
 
-    let wave = tone(TONE, 1);
+    let wave = zip(697.0, 1209.0, SAMPLE_RATE as usize);
 
     let mut writer = hound::WavWriter::create("tone.wav", spec).unwrap();
     for sample in wave {
