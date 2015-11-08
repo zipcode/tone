@@ -66,6 +66,20 @@ impl SampleStream {
         }
     }
 
+    pub fn then(self, other: SampleStream) -> SampleStream {
+        let mut v: Vec<f64> = Vec::new();
+        for sample in self.samples {
+            v.push(sample)
+        }
+        for sample in other.samples {
+            v.push(sample)
+        }
+        SampleStream {
+            sample_rate: self.sample_rate,
+            samples: v
+        }
+    }
+
     pub fn write(&self, target: &'static str) {
         let spec = hound::WavSpec {
             channels: 1,
@@ -87,7 +101,7 @@ impl fmt::Display for SampleStream {
 }
 
 impl Wave {
-    fn sample(&self, duration: f64) -> SampleStream {
+    pub fn sample(&self, duration: f64) -> SampleStream {
         let sample_rate = SAMPLE_RATE;
         let samples = (duration * (sample_rate as f64)) as usize;
         SampleStream { sample_rate: sample_rate, samples:
@@ -108,14 +122,20 @@ impl Wave {
             }
         }
     }
+
+    pub fn tone(frequency: f64) -> Wave {
+        Tone { frequency: frequency, amplitude: 1.0 }
+    }
+
+    pub fn mix(freqs: Vec<f64>) -> Wave {
+        Mix(freqs.into_iter().map(|freq| Wave::tone(freq)).collect())
+    }
 }
 
 fn main() {
     // DTMF 1
-    let t1 = Tone { frequency: 697.0, amplitude: 1.0};
-    let t2 = Tone { frequency: 1209.0, amplitude: 1.0};
-    let t = Mix(vec!(t1, t2));
-    let sample_stream = t.sample(1.0);
+    let t = Wave::mix(vec![697.0, 1209.0]);
+    let sample_stream = t.sample(0.350).then(Silence.sample(0.200)).then(t.sample(0.350));
     sample_stream.write("tone.wav");
     println!("{}", t);
     println!("{}", sample_stream);
