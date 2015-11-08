@@ -1,11 +1,18 @@
-use wave::Wave;
+use std::fmt;
 
+use wave::Wave;
 use sample::SampleStream;
 
 pub struct DTMF {digit: char}
 
 const MARK: f64 = 0.250;
 const SPACE: f64 = 0.15;
+
+impl fmt::Display for DTMF {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "DTMF({})", self.digit)
+    }
+}
 
 impl DTMF {
     pub fn new(digit: char) -> DTMF { DTMF { digit: digit } }

@@ -11,6 +11,8 @@ pub struct SampleStream {
     pub samples: Vec<f64>,
 }
 
+// Adding two streams together means summing their values.
+// This is used as a part of the fold which combines tones in Wave
 impl Add for SampleStream {
     type Output = SampleStream;
 
@@ -23,6 +25,8 @@ impl Add for SampleStream {
 }
 
 impl SampleStream {
+    // A "zero" stream.  The SampleStream equivalent of Wave::Silence
+    // It has a sample rate and a duration.  It is used as a base case for the Wave.sample fold.
     pub fn zero(sample_rate: u32, duration: f64) -> SampleStream {
         SampleStream {
             sample_rate: sample_rate,
@@ -30,6 +34,7 @@ impl SampleStream {
         }
     }
 
+    // An empty stream.  This is useful as a base case for folding using `then`.
     pub fn empty() -> SampleStream {
         SampleStream {
             sample_rate: SAMPLE_RATE,
@@ -37,6 +42,8 @@ impl SampleStream {
         }
     }
 
+    // Scale samples by some f64.  This is used in Wave.sample() along with `add` to properly
+    // scale a set of waves that have been added together.
     pub fn scale(&self, by: f64) -> SampleStream {
         SampleStream {
             sample_rate: self.sample_rate,
@@ -44,6 +51,7 @@ impl SampleStream {
         }
     }
 
+    // Concatenate two streams and drop the input.
     pub fn then(self, other: SampleStream) -> SampleStream {
         let mut v: Vec<f64> = Vec::new();
         for sample in self.samples {
@@ -58,14 +66,15 @@ impl SampleStream {
         }
     }
 
-    pub fn write(&self, target: &'static str) {
+    // Write self to a file and drop.
+    pub fn write(self, target: &'static str) {
         let spec = hound::WavSpec {
             channels: 1,
             sample_rate: self.sample_rate,
             bits_per_sample: 16,
         };
         let mut writer = hound::WavWriter::create(target, spec).unwrap();
-        for sample in &self.samples {
+        for sample in self.samples {
             writer.write_sample((sample * (i16::MAX as f64)) as i16).unwrap();
         }
         writer.finalize().unwrap();
