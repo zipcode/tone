@@ -22,7 +22,14 @@ impl fmt::Display for Wave {
         match self {
             &Silence => write!(f, "Silence"),
             &Tone { frequency: fr, amplitude: a } => write!(f, "Tone({}Hz {:.0}%)", fr, a*100.0),
-            _ => write!(f, "Mix")
+            &Mix(ref tones) => {
+                try!(write!(f, "Mix("));
+                for (count, tone) in tones.iter().enumerate() {
+                    if count != 0 { try!(write!(f, ", ")); }
+                    try!(write!(f, "{}", tone));
+                }
+                write!(f, ")")
+            }
         }
     }
 }
