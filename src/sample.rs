@@ -30,6 +30,13 @@ impl SampleStream {
         }
     }
 
+    pub fn empty() -> SampleStream {
+        SampleStream {
+            sample_rate: SAMPLE_RATE,
+            samples: vec![0.0; 0]
+        }
+    }
+
     pub fn scale(&self, by: f64) -> SampleStream {
         SampleStream {
             sample_rate: self.sample_rate,
