@@ -39,13 +39,14 @@ impl fmt::Display for SampleStream {
 
 impl Wave {
     fn sample(&self, duration: f64) -> SampleStream {
-        let samples = (duration * (SAMPLE_RATE as f64)) as usize;
-        SampleStream { sample_rate: SAMPLE_RATE, samples:
+        let sample_rate = SAMPLE_RATE;
+        let samples = (duration * (sample_rate as f64)) as usize;
+        SampleStream { sample_rate: sample_rate, samples:
             match self {
                 &Silence => vec![0.0; samples],
                 &Tone { frequency, amplitude } => (0..samples).map(|sample|
                     amplitude *
-                    (2.0 * PI * frequency * (sample as f64) / (SAMPLE_RATE as f64)).sin()
+                    (2.0 * PI * frequency * (sample as f64) / (sample_rate as f64)).sin()
                 ).collect(),
                 _ => vec![0.0; samples]
             }
