@@ -3,6 +3,7 @@
 use Wave::*;
 use std::fmt;
 use std::f64::consts::PI;
+use std::i16;
 use std::ops::Add;
 extern crate hound;
 
@@ -64,6 +65,19 @@ impl SampleStream {
             samples: self.samples.iter().map(|s| s*by).collect()
         }
     }
+
+    pub fn write(&self, target: &'static str) {
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: self.sample_rate,
+            bits_per_sample: 16,
+        };
+        let mut writer = hound::WavWriter::create(target, spec).unwrap();
+        for sample in &self.samples {
+            writer.write_sample((sample * (i16::MAX as f64)) as i16).unwrap();
+        }
+        writer.finalize().unwrap();
+    }
 }
 
 impl fmt::Display for SampleStream {
@@ -97,10 +111,12 @@ impl Wave {
 }
 
 fn main() {
-    let t1 = Tone { frequency: 975.0, amplitude: 1.0};
-    let t2 = Tone { frequency: 1000.0, amplitude: 1.0};
+    // DTMF 1
+    let t1 = Tone { frequency: 697.0, amplitude: 1.0};
+    let t2 = Tone { frequency: 1209.0, amplitude: 1.0};
     let t = Mix(vec!(t1, t2));
     let sample_stream = t.sample(1.0);
+    sample_stream.write("tone.wav");
     println!("{}", t);
     println!("{}", sample_stream);
 }
