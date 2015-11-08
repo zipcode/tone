@@ -1,37 +1,45 @@
-use std::f32::consts::PI;
-use std::i16;
+#![allow(dead_code)]
+
+use Wave::*;
+use std::f64::consts::PI;
 extern crate hound;
 
-const TONE: f32 = 1004.0;
 const SAMPLE_RATE: u32 = 44100;
 
-fn tone(freq: f32, duration: u32) -> Vec<f32> {
-    cycle(freq).iter().cycle().take((duration * SAMPLE_RATE) as usize).cloned().collect()
+#[derive(Debug)]
+enum Wave {
+    Silence,
+    Tone {
+        frequency: f64,
+        amplitude: f64,
+    },
+    Mix(Vec<Wave>),
 }
 
-fn cycle(freq: f32) -> Vec<f32> {
-    let samples = ((SAMPLE_RATE as f32) / freq) as u32;
-    (0..samples).map(|s| {
-        (2.0 * PI * (s as f32)/(samples as f32)).sin()
-    }).collect()
+#[derive(Debug)]
+struct SampleStream {
+    sample_rate: u32,
+    samples: Vec<f64>,
 }
 
-fn zip(f1: f32, f2: f32, samples: usize) -> Vec<f32> {
-    cycle(f1).iter().cycle().zip(cycle(f2).iter().cycle()).map(|(s1, s2)| (s1+s2)/2.0).take(samples).collect()
+impl Wave {
+    fn sample(&self, duration: f64) -> SampleStream {
+        let samples = (duration * (SAMPLE_RATE as f64)) as usize;
+        SampleStream { sample_rate: SAMPLE_RATE, samples:
+            match self {
+                &Silence => vec![0.0; samples],
+                &Tone { frequency, amplitude } => (0..samples).map(|sample|
+                    amplitude *
+                    (2.0 * PI * frequency * (sample as f64) / (SAMPLE_RATE as f64)).sin()
+                ).collect(),
+                _ => vec![0.0; samples]
+            }
+        }
+    }
 }
 
 fn main() {
-    let spec = hound::WavSpec {
-        channels: 1,
-        sample_rate: SAMPLE_RATE,
-        bits_per_sample: 16,
-    };
-
-    let wave = zip(697.0, 1209.0, SAMPLE_RATE as usize);
-
-    let mut writer = hound::WavWriter::create("tone.wav", spec).unwrap();
-    for sample in wave {
-      writer.write_sample((sample * (i16::MAX as f32)) as i16).unwrap();
-    }
-    writer.finalize().unwrap();
+    let t = Tone { frequency: 975.0, amplitude: 1.0};
+    let samples = t.sample(1.0).samples;
+    println!("{:?}", samples);
 }
