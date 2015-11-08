@@ -49,6 +49,15 @@ impl Wave {
     pub fn mix(freqs: Vec<f64>) -> Wave {
         Mix(freqs.into_iter().map(|freq| Wave::tone(freq)).collect())
     }
+
+    #[allow(dead_code)]
+    pub fn freqs(&self) -> Vec<f64> {
+        match self {
+            &Silence => Vec::new(),
+            &Tone { frequency: f, .. } => vec!(f),
+            &Mix(ref tones) => tones.iter().flat_map(Wave::freqs).collect()
+        }
+    }
 }
 
 impl fmt::Display for Wave {

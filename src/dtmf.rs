@@ -1,7 +1,11 @@
 use std::fmt;
 
+extern crate itertools;
+
 use wave::Wave;
 use sample::SampleStream;
+use goertzel::*;
+use self::itertools::Itertools;
 
 pub struct DTMF {digit: char}
 
@@ -11,6 +15,12 @@ const SPACE: f64 = 0.15;
 impl fmt::Display for DTMF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "DTMF({})", self.digit)
+    }
+}
+
+impl PartialEq for DTMF {
+    fn eq(&self, other: &DTMF) -> bool {
+        self.digit.eq(&other.digit)
     }
 }
 
@@ -45,5 +55,20 @@ impl DTMF {
         .fold(SampleStream::empty(), |acc, wave| {
             acc.then(wave.sample(MARK)).then(Wave::Silence.sample(SPACE))
         })
+    }
+
+    pub fn detect_at(offset: usize, stream: &SampleStream) -> Option<DTMF> {
+        let power = goertzel(697.0, offset, &stream).sqrt() * goertzel(1209.0, offset, &stream);
+        match power > 44.0*44.0 {
+            true => Some(DTMF::new('1')),
+            false => None
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn detect(stream: &SampleStream) -> Vec<DTMF> {
+        (0..(stream.len()/DETECT)).map(|chunk| {
+            DTMF::detect_at(chunk*DETECT, &stream)
+        }).flat_map(|a| a).dedup().collect()
     }
 }

@@ -24,6 +24,8 @@ impl Add for SampleStream {
     }
 }
 
+
+
 impl SampleStream {
     // A "zero" stream.  The SampleStream equivalent of Wave::Silence
     // It has a sample rate and a duration.  It is used as a base case for the Wave.sample fold.
@@ -64,6 +66,11 @@ impl SampleStream {
             sample_rate: self.sample_rate,
             samples: v
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn len(&self) -> usize {
+        self.samples.len()
     }
 
     // Write self to a file and drop.
