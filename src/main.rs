@@ -57,6 +57,13 @@ impl SampleStream {
             samples: vec![0.0; (duration * (sample_rate as f64)) as usize]
         }
     }
+
+    pub fn scale(&self, by: f64) -> SampleStream {
+        SampleStream {
+            sample_rate: self.sample_rate,
+            samples: self.samples.iter().map(|s| s*by).collect()
+        }
+    }
 }
 
 impl fmt::Display for SampleStream {
@@ -82,7 +89,7 @@ impl Wave {
                     .fold(
                         SampleStream::zero(sample_rate, duration),
                         SampleStream::add
-                    ).samples
+                    ).scale(1.0/(tones.len() as f64)).samples
                 }
             }
         }
