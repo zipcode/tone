@@ -74,6 +74,7 @@ impl SampleStream {
     }
 
     // Write self to a file and drop.
+    #[allow(dead_code)]
     pub fn write(self, target: &'static str) {
         let spec = hound::WavSpec {
             channels: 1,
@@ -85,6 +86,16 @@ impl SampleStream {
             writer.write_sample((sample * (i16::MAX as f64)) as i16).unwrap();
         }
         writer.finalize().unwrap();
+    }
+
+    #[allow(dead_code)]
+    pub fn read(src: &'static str) -> SampleStream {
+        let mut reader = hound::WavReader::open(src).unwrap();
+        let samples: Vec<f64> = reader.samples::<i16>().into_iter().map(|s| (s.unwrap() as f64) / (i16::MAX as f64)).collect();
+        SampleStream {
+            sample_rate: SAMPLE_RATE,
+            samples: samples
+        }
     }
 }
 
