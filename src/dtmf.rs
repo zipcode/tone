@@ -12,6 +12,15 @@ pub struct DTMF {digit: char}
 const MARK: f64 = 0.250;
 const SPACE: f64 = 0.15;
 
+const ROW: [f64; 4] = [697.0, 770.0, 852.0, 941.0];
+const COL: [f64; 4] = [1209.0, 1336.0, 1477.0, 1633.0];
+
+const DIGITS: [[char; 4]; 4] =
+    [['1', '2', '3', 'a'],
+     ['4', '5', '6', 'b'],
+     ['7', '8', '9', 'c'],
+     ['*', '0', '#', 'd']];
+
 impl fmt::Display for DTMF {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "DTMF({})", self.digit)
@@ -58,10 +67,21 @@ impl DTMF {
     }
 
     pub fn detect_at(offset: usize, stream: &SampleStream) -> Option<DTMF> {
-        let power = goertzel(697.0, offset, &stream).sqrt() * goertzel(1209.0, offset, &stream);
-        match power > 44.0*44.0 {
-            true => Some(DTMF::new('1')),
-            false => None
+        let mut powers: Vec<(char, u32)> = (0..4).flat_map(|row| {
+            (0..4).map(move |col| {
+                (DIGITS[row][col],
+                (goertzel(ROW[row], offset, &stream) *
+                goertzel(COL[col], offset, &stream) * 10000.0) as u32
+                )
+            })
+        }).collect();
+        powers.sort_by(|a, b| a.1.cmp(&b.1));
+        let last = powers.last().unwrap().1;
+        let snd = powers[powers.len()-2].1;
+        if last > 2000 && (last as f64) > (snd as f64)*1.2 {
+            Some(DTMF::new(powers.last().unwrap().0))
+        } else {
+            None
         }
     }
 
@@ -69,6 +89,6 @@ impl DTMF {
     pub fn detect(stream: &SampleStream) -> Vec<DTMF> {
         (0..(stream.len()/DETECT)).map(|chunk| {
             DTMF::detect_at(chunk*DETECT, &stream)
-        }).flat_map(|a| a).dedup().collect()
+        }).dedup().flat_map(|a| a).collect()
     }
 }

@@ -6,7 +6,7 @@ pub const DETECT: usize = 205;
 
 #[allow(dead_code)]
 pub fn goertzel(freq: f64, offset: usize, stream: &SampleStream) -> f64 {
-    let norm_freq = freq/(SAMPLE_RATE as f64);
+    let norm_freq = freq / (SAMPLE_RATE as f64);
 
     let coeff = 2.0 * (2.0 * PI * norm_freq).cos();
     let mut s_minus_2 = 0.0;
