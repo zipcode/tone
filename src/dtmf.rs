@@ -69,9 +69,10 @@ impl DTMF {
     pub fn detect_at(offset: usize, stream: &SampleStream) -> Option<DTMF> {
         let mut powers: Vec<(char, u32)> = (0..4).flat_map(|row| {
             (0..4).map(move |col| {
-                (DIGITS[row][col],
-                (goertzel(ROW[row], offset, &stream) *
-                goertzel(COL[col], offset, &stream) * 10000.0) as u32
+                (
+                    DIGITS[row][col],
+                    (goertzel(ROW[row], offset, stream) +
+                    goertzel(COL[col], offset, stream)) as u32,
                 )
             })
         }).collect();
@@ -89,6 +90,6 @@ impl DTMF {
     pub fn detect(stream: &SampleStream) -> Vec<DTMF> {
         (0..(stream.len()/DETECT)).map(|chunk| {
             DTMF::detect_at(chunk*DETECT, &stream)
-        }).dedup().flat_map(|a| a).collect()
+        }).flat_map(|a| a).collect()
     }
 }
