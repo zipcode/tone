@@ -13,7 +13,7 @@ pub struct DTMF { pub digit: char }
 const MARK: f64 = 0.250;
 const SPACE: f64 = 0.15;
 
-const SILENCE_FLOOR: u32 = 200;
+const SILENCE_FLOOR: u32 = 100;
 const DISCRIMINATION_MIN: f64 = 1.1;
 
 const ROW: [f64; 4] = [697.0, 770.0, 852.0, 941.0];
