@@ -7,10 +7,14 @@ use sample::SampleStream;
 use goertzel::*;
 use self::itertools::Itertools;
 
-pub struct DTMF {digit: char}
+#[derive(Debug)]
+pub struct DTMF { pub digit: char }
 
 const MARK: f64 = 0.250;
 const SPACE: f64 = 0.15;
+
+const SILENCE_FLOOR: u32 = 200;
+const DISCRIMINATION_MIN: f64 = 1.1;
 
 const ROW: [f64; 4] = [697.0, 770.0, 852.0, 941.0];
 const COL: [f64; 4] = [1209.0, 1336.0, 1477.0, 1633.0];
@@ -79,7 +83,9 @@ impl DTMF {
         powers.sort_by(|a, b| a.1.cmp(&b.1));
         let last = powers.last().unwrap().1;
         let snd = powers[powers.len()-2].1;
-        if last > 2000 && (last as f64) > (snd as f64)*1.2 {
+        if last < SILENCE_FLOOR {
+            Some(DTMF::new(' '))
+        } else if (last as f64) > (snd as f64)*DISCRIMINATION_MIN {
             Some(DTMF::new(powers.last().unwrap().0))
         } else {
             None
@@ -90,6 +96,11 @@ impl DTMF {
     pub fn detect(stream: &SampleStream) -> Vec<DTMF> {
         (0..(stream.len()/DETECT)).map(|chunk| {
             DTMF::detect_at(chunk*DETECT, &stream)
-        }).flat_map(|a| a).collect()
+        }).flat_map(|a| a).dedup().filter(|dtmf| { // Strip silence
+            match dtmf {
+                &DTMF { digit: ' ' } => false,
+                _ => true
+            }
+        }).collect()
     }
 }
